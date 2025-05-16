@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tesserato - Explorando o poligono 4ª Dimensão</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #343435;
+        }
+        
+        header {
+            background-color: var(--primary-color);
+            color: rgb(255, 255, 255);
+            padding: 2rem 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-color), var(--secondary-color));
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            animation: fadeIn 1s ease-in-out;
+        }
+        
+        .tagline {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            animation: fadeIn 1.5s ease-in-out;
+        }
+        
+        nav {
+            background-color: var(--dark-color);
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        
+        nav ul {
+            display: flex;
+            justify-content: center;
+            list-style: none;
+            flex-wrap: wrap;
+        }
+        
+        nav li {
+            margin: 0 1rem;
+        }
+        
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+        
+        nav a:hover, nav a.active {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .section {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .section:hover {
+            transform: translateY(-5px);
+        }
+        
+        h2 {
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--secondary-color);
+            font-size: 1.8rem;
+        }
+        
+        h3 {
+            color: var(--primary-color);
+            margin: 1.5rem 0 1rem;
+            font-size: 1.4rem;
+        }
+        
+        p {
+            margin-bottom: 1rem;
+            line-height: 1.7;
+        }
+        
+        .visualization-container {
+            width: 100%;
+            height: 500px;
+            background-color: #f0f0f0;
+            border-radius: 8px;
+            margin: 2rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #tesseractCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 10;
+            background: rgba(255,255,255,0.8);
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        button {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .dimension-nav {
+            display: flex;
+            justify-content: center;
+            margin: 1rem 0;
+        }
+        
+        .dimension-nav button {
+            margin: 0 5px;
+            background-color: var(--primary-color);
+        }
+        
+        .dimension-nav button.active {
+            background-color: var(--accent-color);
+        }
+        
+        .property-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        
+        .property-card {
+            background-color: var(--light-color);
+            padding: 1rem;
+            border-radius: 6px;
+            border-left: 4px solid var(--secondary-color);
+        }
+        
+        .property-card h4 {
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        footer {
+            background-color: var(--dark-color);
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .footer-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            margin: 1rem 0;
+        }
+        
+        .footer-links a {
+            color: white;
+            margin: 0 1rem;
+            text-decoration: none;
+        }
+        
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @media (max-width: 768px) {
+            nav ul {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            nav li {
+                margin: 0.5rem 0;
+            }
+            
+            .visualization-container {
+                height: 400px;
+            }
+            
+            .controls {
+                bottom: 10px;
+                left: 10px;
+                right: 10px;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Tesserato</h1>
+        <p class="tagline">Explorando a Quarta Dimensão</p>
+    </header>
+    
+    <nav>
+        <ul>
+            <li><a href="#introducao" class="active">Introdução</a></li>
+            <li><a href="#propriedades">Propriedades</a></li>
+            <li><a href="#visualizacao">Visualização</a></li>
+            <li><a href="#matematica">Matemática</a></li>
+            <li><a href="#aplicacoes">Aplicações</a></li>
+            <li><a href="#historia">História</a></li>
+        </ul>
+    </nav>
+    
+    <div class="container">
+        <section id="introducao" class="section">
+            <h2>Introdução ao Tesserato</h2>
+            <p>O tesserato, também conhecido como hipercubo 4D ou 8-cell, é a generalização quadridimensional do cubo tridimensional. Assim como o cubo é para o quadrado, o tesserato é para o cubo - uma extensão em uma dimensão adicional.</p>
+            
+            <div class="dimension-nav">
+                <button data-dim="0">Ponto (0D)</button>
+                <button data-dim="1">Linha (1D)</button>
+                <button data-dim="2">Quadrado (2D)</button>
+                <button data-dim="3">Cubo (3D)</button>
+                <button data-dim="4" class="active">Tesserato (4D)</button>
+            </div>
+            
+            <p>O termo "tesserato" foi cunhado por Charles Howard Hinton em 1888 em seu livro "A New Era of Thought". Ele vem do grego "téssera" (quatro) e do sufixo "-ato" (como em cubo).</p>
+            
+            <p>Visualizar um objeto quadridimensional é desafiador para nossa mente tridimensional, mas podemos entender suas propriedades através de analogias e projeções matemáticas.</p>
+        </section>
+        
+        <section id="propriedades" class="section">
+            <h2>Propriedades do Tesserato</h2>
+            
+            <div class="property-grid">
+                <div class="property-card">
+                    <h4>Dimensão</h4>
+                    <p>4 (quadridimensional)</p>
+                </div>
+                <div class="property-card">
+                    <h4>Vértices</h4>
+                    <p>16 pontos</p>
+                </div>
+                <div class="property-card">
+                    <h4>Arestas</h4>
+                    <p>32 linhas</p>
+                </div>
+                <div class="property-card">
+                    <h4>Faces</h4>
+                    <p>24 quadrados</p>
+                </div>
+                <div class="property-card">
+                    <h4>Células</h4>
+                    <p>8 cubos</p>
+                </div>
+                <div class="property-card">
+                    <h4>Ângulo </h4>
+                    <p>90°</p>
+                </div>
+            </div>
+            
+            <p>Cada propriedade do tesserato pode ser derivada através de analogias dimensionais. Por exemplo, um quadrado (2D) tem 4 vértices e 4 arestas. Um cubo (3D) tem 8 vértices, 12 arestas e 6 faces. O tesserato segue este padrão, dobrando o número de vértices a cada dimensão.</p>
+        </section>
+        
+        <section id="visualizacao" class="section">
+            <h2>Visualização Interativa</h2>
+            <p>Como seres tridimensionais, não podemos ver um tesserato verdadeiro em 4D, mas podemos representar suas projeções em 3D ou 2D, assim como podemos desenhar a sombra 2D de um cubo 3D.</p>
+            
+            <div class="visualization-container">
+                <canvas id="tesseractCanvas"></canvas>
+                <div class="controls">
+                    <button id="rotate4D">Iniciar Rotação 4D</button>
+                    <button id="resetView">Resetar Visualização</button>
+                    <label>Velocidade: <input type="range" id="speedControl" min="0" max="100" value="50"></label>
+                    <button id="changeProjection">Mudar Projeção</button>
+                </div>
+            </div>
+            
+            <p>Use o mouse para rotacionar a visualização em 3D. A rotação "4D" simula como o tesserato apareceria se pudéssemos vê-lo se movendo através da quarta dimensão.</p>
+            
+            <h3>Como interpretar a visualização</h3>
+            <p>Na projeção mostrada:</p>
+            <ul>
+                <li>Cada "cubo" que você vê é uma das 8 células cúbicas do tesserato</li>
+                <li>As linhas coloridas representam arestas em diferentes direções dimensionais</li>
+                <li>As conexões distorcidas mostram como os cubos estão conectados na 4ª dimensão</li>
+            </ul>
+        </section>
+        
+        <section id="matematica" class="section">
+            <h2>Matemática do Tesserato</h2>
+            <p>O tesserato pode ser definido matematicamente como o conjunto de todos os pontos (x,y,z,w) no espaço 4D onde cada coordenada varia entre -1 e 1:</p>
+            
+            <p style="text-align: center; font-family: monospace; margin: 1.5rem 0; background: #f0f0f0; padding: 1rem; border-radius: 4px;">
+                {(x,y,z,w) ∈ ℝ⁴ : -1 ≤ x ≤ 1, -1 ≤ y ≤ 1, -1 ≤ z ≤ 1, -1 ≤ w ≤ 1}
+            </p>
+            
+            <p>Suas coordenadas de vértices são todas as combinações possíveis de (±1, ±1, ±1, ±1), totalizando 16 vértices.</p>
+            
+            <h3>Projeções Matemáticas</h3>
+            <p>Para visualizar o tesserato em 3D, usamos projeções matemáticas:</p>
+            
+            <div class="property-grid">
+                <div class="property-card">
+                    <h4>Projeção Perspéctica</h4>
+                    <p>Similar a como uma câmera 3D projeta para 2D, mas de 4D para 3D</p>
+                </div>
+                <div class="property-card">
+                    <h4>Projeção Ortográfica</h4>
+                    <p>Projeção paralela que preserva paralelismo mas não perspectiva</p>
+                </div>
+                <div class="property-card">
+                    <h4>Projeção Estereográfica</h4>
+                    <p>Mapeamento que preserva ângulos mas distorce áreas</p>
+                </div>
+            </div>
+            
+            <h3>Fórmula de Euler Generalizada</h3>
+            <p>Para politopos n-dimensionais convexos, a fórmula de Euler generalizada é:</p>
+            <p style="text-align: center; font-family: monospace; margin: 1.5rem 0;">
+                χ = N₀ - N₁ + N₂ - N₃ + ... + (-1)<sup>n-1</sup>N<sub>n-1</sub> = 1 + (-1)<sup>n-1</sup>
+            </p>
+            <p>Para o tesserato (n=4): 16 - 32 + 24 - 8 = 0, que é igual a 1 + (-1)<sup>3</sup> = 0</p>
+        </section>
+        
+        <section id="aplicacoes" class="section">
+            <h2>Aplicações do Tesserato</h2>
+            <p>Embora seja um conceito abstrato, o tesserato e a geometria 4D têm várias aplicações:</p>
+            
+            <div class="property-grid">
+                <div class="property-card">
+                    <h4>Física Teórica</h4>
+                    <p>Modelagem de espaços-tempo em teorias cosmológicas</p>
+                </div>
+                <div class="property-card">
+                    <h4>Computação Gráfica</h4>
+                    <p>Algoritmos para visualização de dados multidimensionais</p>
+                </div>
+                <div class="property-card">
+                    <h4>Arte e Design</h4>
+                    <p>Inspiração para obras artísticas e arquitetônicas</p>
+                </div>
+                <div class="property-card">
+                    <h4>Topologia</h4>
+                    <p>Estudo de variedades e espaços multidimensionais</p>
+                </div>
+                <div class="property-card">
+                    <h4>Ficção Científica</h4>
+                    <p>Representação de universos paralelos e viagem no tempo</p>
+                </div>
+                <div class="property-card">
+                    <h4>Ciência de Dados</h4>
+                    <p>Visualização de conjuntos de dados com muitas dimensões</p>
+                </div>
+            </div>
+            
+            <h3>Na Cultura Popular</h3>
+            <p>O tesserato aparece em várias obras de ficção científica, mais notavelmente em "A Wrinkle in Time" de Madeleine L'Engle, onde é descrito como um portal para viagem interdimensional.</p>
+        </section>
+        
+        <section id="historia" class="section">
+            <h2>História e Descoberta</h2>
+            <p>A exploração matemática da quarta dimensão começou no século XIX:</p>
+            
+            <h3>Linha do Tempo</h3>
+            <ul style="margin-left: 1.5rem; line-height: 1.8;">
+                <li><strong>1854:</strong> Bernhard Riemann desenvolve a geometria n-dimensional</li>
+                <li><strong>1880:</strong> Edwin A. Abbott publica "Flatland", popularizando conceitos dimensionais</li>
+                <li><strong>1888:</strong> Charles H. Hinton cunha o termo "tesserato" e desenvolve métodos para visualização 4D</li>
+                <li><strong>1909:</strong> Albert Einstein considera o tempo como quarta dimensão na relatividade</li>
+                <li><strong>1947:</strong> H.S.M. Coxeter publica "Regular Polytopes", obra definitiva sobre politopos n-dimensionais</li>
+                <li><strong>1962:</strong> Madeleine L'Engle populariza o termo em "A Wrinkle in Time"</li>
+                <li><strong>1990s-presente:</strong> Visualizações computacionais tornam a 4D mais acessível</li>
+            </ul>
+            
+            <h3>Charles Howard Hinton</h3>
+            <p>Hinton (1853-1907) foi um matemático e escritor britânico que desenvolveu um sistema completo para visualizar a quarta dimensão. Seus "cubos de cores" eram ferramentas físicas para treinar a mente a conceber a 4D.</p>
+        </section>
+    </div>
+    
+    <footer>
+        <div class="footer-content">
+            <h3>Tesserato - Explorando a 4ª Dimensão</h3>
+            <p>Um projeto educacional sobre geometria multidimensional</p>
+            
+            <div class="footer-links">
+                <a href="https://files.fm/f/cjgkw2ukkw">Julio Celta</a>
+                <a href="https://files.fm/u/kr9up2ggev">Matheus</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+        
+            const container = document.querySelector('.visualization-container');
+            const canvas = document.getElementById('tesseractCanvas');
+            
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf0f0f0);
+            
+            const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.z = 5;
+            
+            const renderer = new THREE.WebGLRenderer({ 
+                canvas, 
+                antialias: true,
+                alpha: true
+            });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.25;
+            controls.screenSpacePanning = false;
+            controls.maxPolarAngle = Math.PI;
+            controls.minPolarAngle = 0;
+            controls.maxDistance = 10;
+            controls.minDistance = 2;
+            
+   
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(1, 1, 1);
+            scene.add(directionalLight);
+            
+           
+            let tesseract = createTesseract('perspective');
+            scene.add(tesseract);
+            
+          
+            let isRotating4D = false;
+            let rotationSpeed = 0.005;
+            let currentProjection = 'perspective';
+            
+            document.getElementById('rotate4D').addEventListener('click', function() {
+                isRotating4D = !isRotating4D;
+                this.textContent = isRotating4D ? 'Parar Rotação' : 'Iniciar Rotação 4D';
+            });
+            
+            document.getElementById('resetView').addEventListener('click', function() {
+                controls.reset();
+                camera.position.z = 5;
+            });
+            
+            document.getElementById('speedControl').addEventListener('input', function(e) {
+                rotationSpeed = e.target.value / 5000;
+            });
+            
+            document.getElementById('changeProjection').addEventListener('click', function() {
+                scene.remove(tesseract);
+                currentProjection = currentProjection === 'perspective' ? 'orthographic' : 'perspective';
+                tesseract = createTesseract(currentProjection);
+                scene.add(tesseract);
+                this.textContent = currentProjection === 'perspective' ? 
+                    'Mudar para Projeção Ortográfica' : 'Mudar para Projeção Perspectiva';
+            });
+            
+           
+            document.querySelectorAll('.dimension-nav button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const dim = parseInt(this.dataset.dim);
+               
+                    document.querySelector('.dimension-nav button.active').classList.remove('active');
+                    this.classList.add('active');
+                });
+            });
+            
+           
+            function animate() {
+                requestAnimationFrame(animate);
+                
+                if (isRotating4D) {
+                    tesseract.rotation.x += rotationSpeed;
+                    tesseract.rotation.y += rotationSpeed * 1.3;
+                }
+                
+                controls.update();
+                renderer.render(scene, camera);
+            }
+            
+            animate();
+            
+        
+            window.addEventListener('resize', function() {
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            });
+            
+        
+            function createTesseract(projectionType = 'perspective') {
+                const group = new THREE.Group();
+                
+             
+                const colors = [
+                    0xff0000,
+                    0x00ff00,
+                    0x0000ff,
+                    0xffff00 
+                ];
+                
+               
+                const vertices4D = [];
+                for (let i = 0; i < 16; i++) {
+                    vertices4D.push([
+                        (i & 1) ? 1 : -1,
+                        (i & 2) ? 1 : -1,
+                        (i & 4) ? 1 : -1,
+                        (i & 8) ? 1 : -1
+                    ]);
+                }
+                
+              
+                const vertices3D = vertices4D.map(v => {
+                    if (projectionType === 'perspective') {
+                      
+                        const distance = 2;
+                        const w = 1 / (distance - v[3]);
+                        return new THREE.Vector3(
+                            v[0] * w,
+                            v[1] * w,
+                            v[2] * w
+                        ).multiplyScalar(2);
+                    } else {
+                       
+                        return new THREE.Vector3(v[0], v[1], v[2]);
+                    }
+                });
+                
+               
+                for (let i = 0; i < vertices4D.length; i++) {
+                    for (let j = i + 1; j < vertices4D.length; j++) {
+                        let diff = 0;
+                        for (let d = 0; d < 4; d++) {
+                            if (vertices4D[i][d] !== vertices4D[j][d]) diff++;
+                        }
+                        
+                        if (diff === 1) { 
+                            const direction = Math.log2(
+                                vertices4D[i][0] ^ vertices4D[j][0] ||
+                                vertices4D[i][1] ^ vertices4D[j][1] ||
+                                vertices4D[i][2] ^ vertices4D[j][2] ||
+                                vertices4D[i][3] ^ vertices4D[j][3]
+                            );
+                            
+                            const color = colors[direction % colors.length];
+                            
+                            const geometry = new THREE.BufferGeometry().setFromPoints([
+                                vertices3D[i],
+                                vertices3D[j]
+                            ]);
+                            const material = new THREE.LineBasicMaterial({ 
+                                color,
+                                linewidth: 2
+                            });
+                            const line = new THREE.Line(geometry, material);
+                            group.add(line);
+                        }
+                    }
+                }
+                
+               
+                const sphereGeometry = new THREE.SphereGeometry(0.05, 16, 16);
+                const sphereMaterial = new THREE.MeshBasicMaterial({ 
+                    color: 0x333333 
+                });
+                
+                vertices3D.forEach(v => {
+                    const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+                    sphere.position.copy(v);
+                    group.add(sphere);
+                });
+                
+                return group;
+            }
+            
+           
+            document.querySelectorAll('nav a').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    document.querySelector('nav a.active').classList.remove('active');
+                    this.classList.add('active');
+                    
+                    const targetId = this.getAttribute('href');
+                    document.querySelector(targetId).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>
